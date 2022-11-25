@@ -8,6 +8,7 @@ use App\Http\Requests\ChangeTaskStatusRequest;
 use App\Http\Requests\TaskRequest;
 use App\Models\Task;
 use App\Repositories\TasksRepository;
+use PHPUnit\Exception;
 
 
 class TaskController extends Controller
@@ -21,66 +22,91 @@ class TaskController extends Controller
 
     public function index()
     {
-        $data = $this->task->all();
-        return ResponseFacade::getData($data);
+        try {
+            $data = $this->task->all();
+            return ResponseFacade::getData($data);
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
+        }
+
     }
 
     public function show($id)
     {
-        $data = $this->task->show($id);
-        return ResponseFacade::getData($data);
+        try {
+            $data = $this->task->show($id);
+            return ResponseFacade::getData($data);
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
+        }
     }
 
     public function store(TaskRequest $request)
     {
-        $data = $request->only([
-            'title', 'description'
-        ]);
+        try {
+            $data = $request->only([
+                'title', 'description'
+            ]);
 
-        $data['status'] = config('tasks.default_status');
-        $data['user_id'] = $this->getLoggedUser()->id;
+            $data['status'] = config('tasks.default_status');
+            $data['user_id'] = $this->getLoggedUser()->id;
 
-        $this->task->create($data);
+            $this->task->create($data);
 
-        return ResponseFacade::taskCreated();
+            return ResponseFacade::taskCreated();
 
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
+        }
     }
 
     public function update(TaskRequest $request, $id)
     {
-        $data = $request->only([
-            'title', 'description', 'status'
-        ]);
-        if ($this->checkTaskBelongToUser($id)) {
-            return ResponseFacade::taskMustBelongsToUSer();
-        }
-        $this->task->update($data, $id);
+        try {
+            $data = $request->only([
+                'title', 'description', 'status'
+            ]);
+            if ($this->checkTaskBelongToUser($id)) {
+                return ResponseFacade::taskMustBelongsToUSer();
+            }
+            $this->task->update($data, $id);
 
-        return ResponseFacade::taskUpdated();
+            return ResponseFacade::taskUpdated();
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
+        }
 
     }
 
     public function destroy($id)
     {
-        if ($this->checkTaskBelongToUser($id)) {
-            return ResponseFacade::taskMustBelongsToUSer();
+        try {
+            if ($this->checkTaskBelongToUser($id)) {
+                return ResponseFacade::taskMustBelongsToUSer();
+            }
+            $this->task->delete($id);
+            return ResponseFacade::taskDeleted();
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
         }
-        $this->task->delete($id);
-        return ResponseFacade::taskDeleted();
     }
 
     public function changeStatus(ChangeTaskStatusRequest $request, $id)
     {
-        $data = $request->only([
-            'status'
-        ]);
+        try {
+            $data = $request->only([
+                'status'
+            ]);
 
-        if ($this->checkTaskBelongToUser($id)) {
-            return ResponseFacade::taskMustBelongsToUSer();
+            if ($this->checkTaskBelongToUser($id)) {
+                return ResponseFacade::taskMustBelongsToUSer();
+            }
+
+            $this->task->update($data, $id);
+            return ResponseFacade::taskStatusUpdated();
+        } catch (Exception $exception) {
+            return ResponseFacade::failedResponse();
         }
-
-        $this->task->update($data, $id);
-        return ResponseFacade::taskStatusUpdated();
     }
 
     public function checkTaskBelongToUser($taskId)

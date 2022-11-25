@@ -90,5 +90,13 @@ class ApiResponses
         );
     }
 
+    public function failedResponse()
+    {
+        return $this->baseResponse(
+            'An error has occurred.',
+            HTTP_BAD_GATEWAY
+        );
+    }
+
 
 }
